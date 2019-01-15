@@ -9,6 +9,8 @@ contract Voting {
 
     }
 
+    address addminAddress;
+
     struct Voter {
         uint proposal;
         bool voted;
@@ -21,6 +23,13 @@ contract Voting {
     event CreatedProposalEvent();
     event CreatedVoteEvent();
 
+    constructor() public{
+      addminAddress = msg.sender;
+    }
+
+    function getAdminAddress() public view returns (address) {
+      return addminAddress;
+    }
 
     function getIsVoted(address voteraddress) public view returns (bool) {
       return Voters[voteraddress].voted;
@@ -56,7 +65,7 @@ contract Voting {
         Voters[msg.sender].voted = true;
         Voters[msg.sender].proposal = proposalInt;
 
-        
+
         emit CreatedVoteEvent();
         return true;
         } else {

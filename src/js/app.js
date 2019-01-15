@@ -1,7 +1,7 @@
 App = {
   web3Provider: null,
   contracts: {},
-  voted: {},
+  startTallying: false,
   init: function() {
     return App.initWeb3();
   },
@@ -48,6 +48,30 @@ App = {
       App.handleAddVote(e);
     });
 
+//process of tallying、can use only addministrator
+    $(document).on('click', '.btn-tallying', function(e) {
+      console.log(e);
+      var $this = $(this);
+      $this.button('loading');
+      web3.eth.getAccounts(function(error, accounts) {
+        if (error) {
+          console.log(error);
+        }
+        var account = accounts[0];
+        App.contracts.Voting.deployed().then(function(instance) {
+          tallyingInstance = instance;
+          tallyingInstance.getAdminAddress().then(function(addminAddress){
+            if(account == addminAddress) {
+              App.startTallying = true;
+            }
+            else {
+              alert('管理者のみが開票を行うことができます');
+            }
+        });
+      });
+    });
+      App.getProposals();
+    });
   },
 
   getProposals: function() {
@@ -68,7 +92,12 @@ App = {
             proposalsInstance.getProposal.call(i).then(function(data) {
               var idx = data[0];
               proposalTemplate.find('.panel-title').text(data[1]);
-              proposalTemplate.find('.numVotes').text(data[2]);
+
+              //開票
+              if(App.startTallying == true) {
+                proposalTemplate.find('.numVotes').text(data[2]);
+              }
+
 
               proposalTemplate.find('.btn-vote').attr('data-proposal', idx);
 
@@ -113,7 +142,18 @@ App = {
       var account = accounts[0];
       App.contracts.Voting.deployed().then(function(instance) {
         proposalInstance = instance;
-        return proposalInstance.addProposal(value, {from: account});
+
+        proposalInstance.getAdminAddress().then(function(addminAddress){
+          if(account == addminAddress) {
+            return proposalInstance.addProposal(value, {from: account});
+          }
+          else {
+            alert('管理者のみが候補者を追加できます。');
+            return false;
+          }
+        })
+
+
       }).then(function(result) {
         var event = proposalInstance.CreatedProposalEvent();
         App.handleEvent(event);
