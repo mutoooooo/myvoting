@@ -1,7 +1,7 @@
 App = {
   web3Provider: null,
   contracts: {},
-
+  voted: {},
   init: function() {
     return App.initWeb3();
   },
@@ -57,7 +57,7 @@ App = {
         console.log(error);
       }
       var account = accounts[0];
-      console.log(account)
+
       App.contracts.Voting.deployed().then(function(instance) {
         proposalsInstance = instance;
         proposalsInstance.getNumProposals.call().then(function(numProposals) {
@@ -69,16 +69,26 @@ App = {
               var idx = data[0];
               proposalTemplate.find('.panel-title').text(data[1]);
               proposalTemplate.find('.numVotes').text(data[2]);
-              // proposalTemplate.find('.numVotesPos').text(data[2]);
-              // proposalTemplate.find('.numVotesNeg').text(data[3]);
-              // proposalTemplate.find('.numVotesAbs').text(data[4]);
+
               proposalTemplate.find('.btn-vote').attr('data-proposal', idx);
-              proposalTemplate.find('.btn-vote').attr('disabled', false);
-              for (j=0; j<data[3].length; j++) {
-                if (data[3][j] == account) {
-                  proposalTemplate.find('.btn-vote').attr('disabled', true);
-                }
-              }
+
+
+              proposalsInstance.getIsVoted.call(account).then(function(isVoted) {
+                console.log(isVoted);
+                if (isVoted == true) {
+                    console.log("in if")
+                    wrapperProposals.find('.btn-vote').prop('disabled', true);
+                    console.log(proposalTemplate.find('.btn-vote'))
+                  }
+                  else {
+                    console.log("in else")
+                    wrapperProposals.find('.btn-vote').p('disabled', false);
+                  }
+              }).catch(function(err) {
+                console.log(err.message);
+              });
+
+
               wrapperProposals.append(proposalTemplate.html());
             }).catch(function(err) {
               console.log(err.message);
@@ -128,8 +138,9 @@ App = {
       App.contracts.Voting.deployed().then(function(instance) {
         voteInstance = instance;
         console.log("instance log");
-        return voteInstance.vote(proposalInt, voteValue, {from: account});
+        return voteInstance.vote(proposalInt, {from: account});
       }).then(function(result) {
+
         var event = voteInstance.CreatedVoteEvent();
         console.log("result log");
         App.handleEvent(event);

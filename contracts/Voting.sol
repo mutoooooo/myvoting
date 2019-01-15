@@ -6,31 +6,34 @@ contract Voting {
     struct Proposal {
         string title;
         uint voteCount;
-        /* uint voteCountPos;
-        uint voteCountNeg;
-        uint voteCountAbs; */
-        mapping (address => Voter) voters;
-        address[] votersAddress;
+
     }
 
     struct Voter {
-        uint value;
+        uint proposal;
         bool voted;
     }
+
+    mapping (address => Voter) Voters;
 
     Proposal[] public proposals;
 
     event CreatedProposalEvent();
     event CreatedVoteEvent();
 
+
+    function getIsVoted(address voteraddress) public view returns (bool) {
+      return Voters[voteraddress].voted;
+    }
+
     function getNumProposals() public view returns (uint) {
         return proposals.length;
     }
 
-    function getProposal(uint proposalInt) public view returns (uint, string, uint, address[]) {
+    function getProposal(uint proposalInt) public view returns (uint, string, uint) {
         if (proposals.length > 0) {
             Proposal storage p = proposals[proposalInt]; // Get the proposal
-            return (proposalInt, p.title, p.voteCount, p.votersAddress);
+            return (proposalInt, p.title, p.voteCount);
         }
     }
 
@@ -42,29 +45,23 @@ contract Voting {
         return true;
     }
 
-    function vote(uint proposalInt, uint voteValue) public returns (bool) {
-        if (proposals[proposalInt].voters[msg.sender].voted == false) { // check duplicate key
-            /* require(voteValue == 1 || voteValue == 2 || voteValue == 3); // check voteValue
-            Proposal storage p = proposals[proposalInt]; // Get the proposal
-            if (voteValue == 1) {
-                p.voteCountPos += 1;
-            } else if (voteValue == 2) {
-                p.voteCountNeg += 1;
-            } else {
-                p.voteCountAbs += 1;
-            } */
-            require(voteValue == 1);
-              Proposal storage p = proposals[proposalInt]; // Get the proposal
-              p.voteCount += 1;
+    function vote(uint proposalInt) public returns (bool) {
+      require(proposalInt <= proposals.length);
+      if (Voters[msg.sender].voted == false) { // check duplicate key
 
-            p.voters[msg.sender].value = voteValue;
-            p.voters[msg.sender].voted = true;
-            p.votersAddress.push(msg.sender);
-            emit CreatedVoteEvent();
-            return true;
+
+        Proposal storage p = proposals[proposalInt]; // Get the proposal
+        p.voteCount += 1;
+
+        Voters[msg.sender].voted = true;
+        Voters[msg.sender].proposal = proposalInt;
+
+        
+        emit CreatedVoteEvent();
+        return true;
         } else {
-            return false;
+          return false;
         }
-    }
+      }
 
-}
+    }
