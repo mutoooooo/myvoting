@@ -60,7 +60,7 @@ App = {
         var account = accounts[0];
         App.contracts.Voting.deployed().then(function(instance) {
           tallyingInstance = instance;
-          tallyingInstance.getAdminAddress().then(function(addminAddress){
+          tallyingInstance.getAdminAddress.call().then(function(addminAddress){
             if(account == addminAddress) {
               App.startTallying = true;
             }
@@ -72,6 +72,31 @@ App = {
     });
       App.getProposals();
     });
+
+//decide random value
+    $(document).on('click', '#register', function(e) {
+      console.log(e);
+      var $this = $(this);
+      $this.button('loading');
+      web3.eth.getAccounts(function(error, accounts) {
+        if (error) {
+          console.log(error);
+        }
+        var account = accounts[0];
+        App.contracts.Voting.deployed().then(function(instance) {
+          registerInstance = instance;
+          return registerInstance.setRandomValue(account,{from: account}).then(function(result){
+
+
+        }).catch(function(err) {
+          console.log(err.message);
+          $('button').button('reset');
+        });
+      });
+    });
+    App.getProposals();
+    });
+
   },
 
   getProposals: function() {
@@ -97,6 +122,13 @@ App = {
               if(App.startTallying == true) {
                 proposalTemplate.find('.numVotes').text(data[2]);
               }
+              //ランダム値記述
+              proposalsInstance.getRandomValue.call(account).then(function(random){
+                if (random != 0) {
+                  console.log(random)
+                $('.randomvalue').text(random);
+              }
+              });
 
 
               proposalTemplate.find('.btn-vote').attr('data-proposal', idx);
@@ -129,6 +161,7 @@ App = {
       });
     });
     $('button').button('reset');
+
   },
 
   handleAddProposal: function(event) {
@@ -143,7 +176,7 @@ App = {
       App.contracts.Voting.deployed().then(function(instance) {
         proposalInstance = instance;
 
-        proposalInstance.getAdminAddress().then(function(addminAddress){
+        proposalInstance.getAdminAddress.call().then(function(addminAddress){
           if(account == addminAddress) {
             return proposalInstance.addProposal(value, {from: account});
           }
@@ -178,15 +211,25 @@ App = {
       App.contracts.Voting.deployed().then(function(instance) {
         voteInstance = instance;
         console.log("instance log");
-        return voteInstance.vote(proposalInt, {from: account});
-      }).then(function(result) {
 
-        var event = voteInstance.CreatedVoteEvent();
-        console.log("result log");
-        App.handleEvent(event);
-      }).catch(function(err) {
-        console.log(err.message);
-        $('button').button('reset');
+        console.log(proposalInt);
+
+        voteInstance.getRandomValue.call(account).then(function(random){
+          randomValue = random;
+          console.log(randomValue);
+          randomedProposal = String(parseInt(proposalInt,10) + parseInt(randomValue,10))
+          console.log(randomedProposal);
+
+          return voteInstance.vote(randomedProposal,{from: account});
+        }).then(function(result) {
+
+          var event = voteInstance.CreatedVoteEvent();
+          console.log("result log");
+          App.handleEvent(event);
+        }).catch(function(err) {
+          console.log(err.message);
+          $('button').button('reset');
+        });
       });
     });
   },

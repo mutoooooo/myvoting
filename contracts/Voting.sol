@@ -14,6 +14,7 @@ contract Voting {
     struct Voter {
         uint proposal;
         bool voted;
+        uint randomValue;
     }
 
     mapping (address => Voter) Voters;
@@ -25,6 +26,24 @@ contract Voting {
 
     constructor() public{
       addminAddress = msg.sender;
+    }
+
+// ランダムな値をセットする、ランダムになってないので改良
+    function setRandomValue(address voterAddress) public returns(uint) {
+      uint random;
+      random = generateRandom();
+      /* uint random = uint(sha3(block.timestamp))%10 +1; */
+      Voters[voterAddress].randomValue = random;
+      return random;
+    }
+//ランダムな値を持ってくる。
+    function getRandomValue(address voterAddress) public view returns (uint) {
+      if(voterAddress == msg.sender) {
+        return Voters[voterAddress].randomValue;
+      }
+      else {
+        return ;
+      }
     }
 
     function getAdminAddress() public view returns (address) {
@@ -54,11 +73,12 @@ contract Voting {
         return true;
     }
 
-    function vote(uint proposalInt) public returns (bool) {
-      require(proposalInt <= proposals.length);
+    function vote(uint randomedProposal) public returns (bool) {
+      /* require(proposalInt <= proposals.length); */
       if (Voters[msg.sender].voted == false) { // check duplicate key
 
-
+        uint proposalInt = randomedProposal - Voters[msg.sender].randomValue;
+        require(proposalInt <= proposals.length);
         Proposal storage p = proposals[proposalInt]; // Get the proposal
         p.voteCount += 1;
 
@@ -71,6 +91,10 @@ contract Voting {
         } else {
           return false;
         }
+      }
+
+      function generateRandom() public returns (uint) {
+        return 2;
       }
 
     }
